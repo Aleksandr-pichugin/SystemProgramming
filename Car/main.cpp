@@ -42,6 +42,7 @@ public:
 			fuel_level = CAPACITY;
 			cout << "Full Tank" << endl;
 		}
+
 		return fuel_level;
 	}
 	double give_fuel(double amount)
