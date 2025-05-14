@@ -1,4 +1,4 @@
-#include<iostream>
+ï»¿#include<iostream>
 using namespace std;
 
 #define MIN_TANK_CAPACITY 20
@@ -65,7 +65,7 @@ void main()
 	double fuel;
 	do
 	{
-		cout << "Íà ñêîëüêî çàïðàâëÿåìñÿ? "; cin >> fuel;
+		cout << "ÐÐ° ÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ð·Ð°Ð¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ÑÑ? "; cin >> fuel;
 		tank.fill(fuel);
 		tank.info();
 	} while (true);
