@@ -1,7 +1,10 @@
 ﻿#include<Windows.h>
 #include<iostream>
 #include<conio.h>
-using namespace std;
+#include<thread>
+using std::cin;
+using std::cout;
+using std::endl;
 
 #define Enter   13
 #define Escape  27
@@ -122,6 +125,10 @@ class Car
 	int speed;
 	const int MAX_SPEED;
 	bool driver_inside;
+	struct
+	{
+		std::thread panel_thread;
+	}threads_container; // Эта структура не имеет имени и реализует только один экземпляр.
 public:
 	Car(double consumption, int capacity, int max_speed=250):
 		MAX_SPEED
@@ -144,11 +151,15 @@ public:
 	void get_in()
 	{
 		driver_inside = true;
-		panel();
+		threads_container.panel_thread = std::thread(&Car::panel, this);
+		//panel();
 	}
 	void get_out()
 	{
 		driver_inside = false;
+		if (threads_container.panel_thread.joinable())threads_container.panel_thread.join();
+		system("CLS");
+		cout << "Yor are out of the Car" << endl;
 	}
 	void control()
 	{
@@ -161,8 +172,15 @@ public:
 			case Enter:
 				driver_inside ? get_out() : get_in();
 				break;
+			case'F':case'f':
+				double fuel;
+				cout << "Введите обьем топлива: "; cin >> fuel;
+				tank.fill(fuel);
+			case Escape:
+				get_out();
 			}
 		} while (key != Escape);
+		// Concurent execution (одновременное выполнение).
 	}
 	void panel()
 	{
