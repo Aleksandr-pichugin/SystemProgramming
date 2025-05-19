@@ -125,15 +125,17 @@ class Car
 	Engine engine;
 	Tank tank;
 	int speed;
+	int acceleration;
 	const int MAX_SPEED;
 	bool driver_inside;
 	struct
 	{
 		std::thread panel_thread;
 		std::thread engine_idle_thread;
+		std::thread free_wheeling_thread;
 	}threads_container; // Эта структура не имеет имени и реализует только один экземпляр.
 public:
-	Car(double consumption, int capacity, int max_speed=250):
+	Car(double consumption, int capacity, int max_speed=250, int acceleration = 10):
 		MAX_SPEED
 		(
 			max_speed<MAX_SPEED_LOWER_LIMIT ? MAX_SPEED_LOWER_LIMIT:
@@ -142,7 +144,8 @@ public:
 		),
 		engine(consumption),
 		tank(capacity),
-		speed(0)
+		speed(0),
+		acceleration(acceleration)
 	{
 		driver_inside = false;
 		cout << "Your car is ready to go, press 'Enter' to get in ;-)" << endl;
@@ -178,6 +181,26 @@ public:
 		if (threads_container.engine_idle_thread.joinable())
 			threads_container.engine_idle_thread.join();
 	}
+	void accelerate()
+	{
+		if (driver_inside && engine.started())
+		{
+			speed += acceleration;
+			if (!threads_container.free_wheeling_thread.joinable())
+				threads_container.free_wheeling_thread = std::thread(&Car::free_wheeling, this);
+			if (speed > MAX_SPEED)speed = MAX_SPEED;
+			std::this_thread::sleep_for(1s);
+		}
+	}
+	void slow_down()
+	{
+		if (driver_inside)
+		{
+			speed -= acceleration;
+			if (speed < 0)speed = 0;
+			std::this_thread::sleep_for(1s);
+		}
+	}
 	void control()
 	{
 		char key = 0;
@@ -198,13 +221,29 @@ public:
 			case'I':case'i': //Ignition
 				if (driver_inside)!engine.started() ? start() : stop();
 				break;
+			case 'W':case'w':
+				accelerate();
+				break;
+			case'S':case's':
+				slow_down();
+				break;
 			case Escape:
 				stop();
 				get_out();
 			}
 		if (tank.get_fuel_level() <= 0)stop();
+		if (speed <= 0 && threads_container.free_wheeling_thread.joinable())
+			threads_container.free_wheeling_thread.join();
 		} while (key != Escape);
 		// Concurent execution (одновременное выполнение).
+	}
+	void free_wheeling()
+	{
+		while (--speed > 0)
+		{
+			if (speed < 0)speed = 0;
+			std::this_thread::sleep_for(1s);
+		}
 	}
 	void engine_idle()
 	{
@@ -226,7 +265,7 @@ public:
 					cout<<" LOW FUEL ";
 					SetConsoleTextAttribute(hConsole, 0x07);
 			}
-			cout << "Engine is " << (engine.started() ? "started" : "stoped") << endl;
+			cout << "Engine is: " << (engine.started() ? "started" : "stoped") << endl;
 			cout << "Speed:\t" << speed << " km/h\n";
 			Sleep(100);
 
